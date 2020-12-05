@@ -109,15 +109,3 @@ venv.bak/
 
 # mypy
 .mypy_cache/
-
-# model
-!first-train/model000000500.model
-!first-train/model000000490.model
-!second-train/model000000490.model
-!second-train/model000000500.model
-!third-train/model000000490.model
-!third-train/model000000500.model
-!fourth-train/model000000490.model
-!fourth-train/model000000500.model
-
-*.txt

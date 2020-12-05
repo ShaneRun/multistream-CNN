@@ -130,3 +130,6 @@ dmypy.json
 
 # mine
 /train_record/
+/train_record_new/
+/trainer/debug.yml
+/trainer/read_yaml.py

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import torch
 import torch.nn as nn
@@ -12,14 +12,19 @@ from DatasetLoader import loadWAV
 # To be able to run model in both cpu and gpu
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+
 class SpeakerNet(nn.Module):
 
-    def __init__(self, lr = 0.0001, margin = 1, scale = 1, hard_rank = 0, hard_prob = 0, model="alexnet50", nOut = 512, nSpeakers = 1000, optimizer = 'adam', encoder_type = 'SAP', normalize = True, trainfunc='contrastive', n_mels=40, log_input=True, **kwargs):
+    def __init__(self, lr=0.0001, margin=1, scale=1, hard_rank=0, hard_prob=0, model="alexnet50", nOut=512,
+                 nSpeakers=1000, optimizer='adam', encoder_type='SAP', normalize=True, trainfunc='contrastive',
+                 n_mels=40, log_input=True, f_min=20, f_max=8000, **kwargs):
         super(SpeakerNet, self).__init__()
 
-        argsdict = {'nOut': nOut, 'encoder_type':encoder_type, 'nClasses':nSpeakers, 'margin':margin, 'scale':scale, 'hard_prob':hard_prob, 'hard_rank':hard_rank, 'log_input':log_input, 'n_mels':n_mels}
+        argsdict = {'nOut': nOut, 'encoder_type': encoder_type, 'nClasses': nSpeakers, 'margin': margin, 'scale': scale,
+                    'hard_prob': hard_prob, 'hard_rank': hard_rank, 'log_input': log_input, 'n_mels': n_mels,
+                    'f_min': f_min, 'f_max': f_max}
 
-        SpeakerNetModel = importlib.import_module('models.'+model).__getattribute__('MainModel')
+        SpeakerNetModel = importlib.import_module('models.' + model).__getattribute__('MainModel')
 
         self.__S__ = SpeakerNetModel(**argsdict)
 
@@ -30,13 +35,13 @@ class SpeakerNet(nn.Module):
 
         self.__S__.to(device)
 
-        LossFunction = importlib.import_module('loss.'+trainfunc).__getattribute__('LossFunction')
+        LossFunction = importlib.import_module('loss.' + trainfunc).__getattribute__('LossFunction')
         self.__L__ = LossFunction(**argsdict).to(device)
 
         if optimizer == 'adam':
-            self.__optimizer__ = torch.optim.Adam(self.parameters(), lr = lr)
+            self.__optimizer__ = torch.optim.Adam(self.parameters(), lr=lr)
         elif optimizer == 'sgd':
-            self.__optimizer__ = torch.optim.SGD(self.parameters(), lr = lr, momentum = 0.9, weight_decay=5e-5)
+            self.__optimizer__ = torch.optim.SGD(self.parameters(), lr=lr, momentum=0.9, weight_decay=5e-5)
         else:
             raise ValueError('Undefined optimizer.')
 
@@ -51,12 +56,12 @@ class SpeakerNet(nn.Module):
         stepsize = loader.batch_size
 
         counter = 0
-        index   = 0
-        loss    = 0
-        top1    = 0     # EER or accuracy
+        index = 0
+        loss = 0
+        top1 = 0  # EER or accuracy
 
         criterion = torch.nn.CrossEntropyLoss()
-        
+
         for data, data_label in loader:
 
             tstart = time.time()
@@ -65,46 +70,47 @@ class SpeakerNet(nn.Module):
 
             feat = []
             for inp in data:
-                outp      = self.__S__.forward(inp.to(device))
+                outp = self.__S__.forward(inp.to(device))
                 feat.append(outp)
 
-            feat = torch.stack(feat,dim=1).squeeze()
+            feat = torch.stack(feat, dim=1).squeeze()
 
-            label   = torch.LongTensor(data_label).to(device)
+            label = torch.LongTensor(data_label).to(device)
 
-            nloss, prec1 = self.__L__.forward(feat,label)
+            nloss, prec1 = self.__L__.forward(feat, label)
 
-            loss    += nloss.detach().cpu()
-            top1    += prec1
+            loss += nloss.detach().cpu()
+            top1 += prec1
             counter += 1
-            index   += stepsize
+            index += stepsize
 
             nloss.backward()
             self.__optimizer__.step()
 
             telapsed = time.time() - tstart
 
-            sys.stdout.write("\rProcessing (%d/%d) "%(index, loader.nFiles))
-            sys.stdout.write("Loss %f TEER/TAcc %2.3f%% - %.2f Hz "%(loss/counter, top1/counter, stepsize/telapsed))
-            sys.stdout.write("Q:(%d/%d)"%(loader.qsize(), loader.maxQueueSize))
+            sys.stdout.write("\rProcessing (%d/%d) " % (index, loader.nFiles))
+            sys.stdout.write(
+                "Loss %f TEER/TAcc %2.3f%% - %.2f Hz " % (loss / counter, top1 / counter, stepsize / telapsed))
+            sys.stdout.write("Q:(%d/%d)" % (loader.qsize(), loader.maxQueueSize))
             sys.stdout.flush()
 
         sys.stdout.write("\n")
 
-        return (loss/counter, top1/counter)
+        return (loss / counter, top1 / counter)
 
     ## ===== ===== ===== ===== ===== ===== ===== =====
     ## Evaluate from list
     ## ===== ===== ===== ===== ===== ===== ===== =====
 
     def evaluateFromList(self, listfilename, print_interval=100, test_path='', num_eval=10, eval_frames=None):
-        
+
         self.eval()
 
-        lines       = []
-        files       = []
-        feats       = {}
-        tstart      = time.time()
+        lines = []
+        files = []
+        feats = {}
+        tstart = time.time()
 
         ## Read all lines
         with open(listfilename) as listfile:
@@ -116,7 +122,7 @@ class SpeakerNet(nn.Module):
                 data = line.split()
 
                 ## Append random label if missing
-                if len(data) == 2: data = [random.randint(0,1)] + data
+                if len(data) == 2: data = [random.randint(0, 1)] + data
 
                 files.append(data[1])
                 files.append(data[2])
@@ -128,18 +134,19 @@ class SpeakerNet(nn.Module):
         ## Save all features to file
         for idx, file in enumerate(setfiles):
 
-            inp1 = loadWAV(os.path.join(test_path,file), eval_frames, evalmode=True, num_eval=num_eval).to(device)
+            inp1 = loadWAV(os.path.join(test_path, file), eval_frames, evalmode=True, num_eval=num_eval).to(device)
 
             ref_feat = self.__S__.forward(inp1).detach().cpu()
 
-            filename = '%06d.wav'%idx
+            filename = '%06d.wav' % idx
 
-            feats[file]     = ref_feat
+            feats[file] = ref_feat
 
             telapsed = time.time() - tstart
 
             if idx % print_interval == 0:
-                sys.stdout.write("\rReading %d of %d: %.2f Hz, embedding size %d"%(idx,len(setfiles),idx/telapsed,ref_feat.size()[1]))
+                sys.stdout.write("\rReading %d of %d: %.2f Hz, embedding size %d" % (
+                idx, len(setfiles), idx / telapsed, ref_feat.size()[1]))
 
         print('')
         all_scores = []
@@ -162,17 +169,18 @@ class SpeakerNet(nn.Module):
                 ref_feat = F.normalize(ref_feat, p=2, dim=1)
                 com_feat = F.normalize(com_feat, p=2, dim=1)
 
-            dist = F.pairwise_distance(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).detach().cpu().numpy()
+            dist = F.pairwise_distance(ref_feat.unsqueeze(-1),
+                                       com_feat.unsqueeze(-1).transpose(0, 2)).detach().cpu().numpy()
 
             score = -1 * numpy.mean(dist)
 
             all_scores.append(score)
             all_labels.append(int(data[0]))
-            all_trials.append(data[1]+" "+data[2])
+            all_trials.append(data[1] + " " + data[2])
 
             if idx % print_interval == 0:
                 telapsed = time.time() - tstart
-                sys.stdout.write("\rComputing %d of %d: %.2f Hz"%(idx,len(lines),idx/telapsed))
+                sys.stdout.write("\rComputing %d of %d: %.2f Hz" % (idx, len(lines), idx / telapsed))
                 sys.stdout.flush()
 
         print('\n')
@@ -187,7 +195,7 @@ class SpeakerNet(nn.Module):
 
         learning_rate = []
         for param_group in self.__optimizer__.param_groups:
-            param_group['lr'] = param_group['lr']*alpha
+            param_group['lr'] = param_group['lr'] * alpha
             learning_rate.append(param_group['lr'])
 
         return learning_rate
@@ -197,7 +205,7 @@ class SpeakerNet(nn.Module):
     ## ===== ===== ===== ===== ===== ===== ===== =====
 
     def saveParameters(self, path):
-        
+
         torch.save(self.state_dict(), path)
 
     ## ===== ===== ===== ===== ===== ===== ===== =====
@@ -214,12 +222,12 @@ class SpeakerNet(nn.Module):
                 name = name.replace("module.", "")
 
                 if name not in self_state:
-                    print("%s is not in the model."%origname)
+                    print("%s is not in the model." % origname)
                     continue
 
             if self_state[name].size() != loaded_state[origname].size():
-                print("Wrong parameter length: %s, model: %s, loaded: %s"%(origname, self_state[name].size(), loaded_state[origname].size()))
+                print("Wrong parameter length: %s, model: %s, loaded: %s" % (
+                origname, self_state[name].size(), loaded_state[origname].size()))
                 continue
 
             self_state[name].copy_(param)
-

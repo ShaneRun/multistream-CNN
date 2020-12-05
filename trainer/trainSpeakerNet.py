@@ -62,7 +62,7 @@ parser.add_argument('--train_path', type=str, default="voxceleb2", help='Absolut
 parser.add_argument('--test_path', type=str, default="voxceleb1", help='Absolute path to the test set')
 
 ## For test only
-parser.add_argument('--eval', dest='eval', action='store_true', help='Eval only')
+parser.add_argument('--eval', type=bool, default=False, help='Eval only')
 
 ## Model definition
 parser.add_argument('--model', type=str, default="", help='Name of model definition')
