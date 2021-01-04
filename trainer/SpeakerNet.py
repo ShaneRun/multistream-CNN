@@ -17,12 +17,12 @@ class SpeakerNet(nn.Module):
 
     def __init__(self, lr=0.0001, margin=1, scale=1, hard_rank=0, hard_prob=0, model="alexnet50", nOut=512,
                  nSpeakers=1000, optimizer='adam', encoder_type='SAP', normalize=True, trainfunc='contrastive',
-                 n_mels=40, log_input=True, f_min=20, f_max=8000, **kwargs):
+                 n_mels=40, log_input=True, f_min=20, f_max=8000, init_method='', **kwargs):
         super(SpeakerNet, self).__init__()
 
         argsdict = {'nOut': nOut, 'encoder_type': encoder_type, 'nClasses': nSpeakers, 'margin': margin, 'scale': scale,
                     'hard_prob': hard_prob, 'hard_rank': hard_rank, 'log_input': log_input, 'n_mels': n_mels,
-                    'f_min': f_min, 'f_max': f_max}
+                    'f_min': f_min, 'f_max': f_max, 'init_method': init_method}
 
         SpeakerNetModel = importlib.import_module('models.' + model).__getattribute__('MainModel')
 

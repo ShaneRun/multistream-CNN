@@ -9,7 +9,8 @@ from torch.nn import Parameter
 from models.ResNetBlocks import *
 
 class ResNetSE(nn.Module):
-    def __init__(self, block, layers, num_filters, nOut, encoder_type='SAP', f_min=0, f_max=None, n_mels=40, log_input=True, **kwargs):
+    def __init__(self, block, layers, num_filters, nOut, encoder_type='SAP',
+                 f_min=0, f_max=None, n_mels=40, log_input=True, init_method='', **kwargs):
         super(ResNetSE, self).__init__()
 
         print('Embedding size is %d, encoder %s.'%(nOut, encoder_type))
@@ -20,6 +21,7 @@ class ResNetSE(nn.Module):
         self.f_max      = f_max
         self.n_mels     = n_mels
         self.log_input  = log_input
+        self.init_method = init_method
 
         self.conv1 = nn.Conv2d(1, num_filters[0] , kernel_size=7, stride=(2, 1), padding=3,
                                bias=False)
@@ -45,7 +47,12 @@ class ResNetSE(nn.Module):
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if self.init_method == 'xavier_normal':
+                    nn.init.xavier_normal_(m.weight, gain=1.0)
+                elif self.init_method == 'normal':
+                    nn.init.normal_(m.weight, mean=0.0, std=1.0)
+                else:
+                    nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)

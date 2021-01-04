@@ -129,7 +129,8 @@ dmypy.json
 .pyre/
 
 # mine
-/train_record/
-/train_record_new/
+/train_record_mscnn/
+/train_record_dlod/
+/train_record_mdl/
 /trainer/debug.yml
 /trainer/read_yaml.py

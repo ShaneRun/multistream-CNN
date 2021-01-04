@@ -27,6 +27,7 @@ parser.add_argument('--nDataLoaderThread', type=int, default=5, help='Number of 
 ## Training details
 parser.add_argument('--test_interval', type=int, default=10, help='Test and save every [test_interval] epochs')
 parser.add_argument('--max_epoch', type=int, default=500, help='Maximum number of epochs')
+parser.add_argument('--init_method', type=str, default="", help='Initialization method')
 parser.add_argument('--trainfunc', type=str, default="", help='Loss function')
 parser.add_argument('--optimizer', type=str, default="adam", help='sgd or adam')
 
