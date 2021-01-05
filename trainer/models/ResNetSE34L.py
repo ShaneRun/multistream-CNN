@@ -49,10 +49,13 @@ class ResNetSE(nn.Module):
             if isinstance(m, nn.Conv2d):
                 if self.init_method == 'xavier_normal':
                     nn.init.xavier_normal_(m.weight, gain=1.0)
+                    print('Initialization method is xavier_normal.')
                 elif self.init_method == 'normal':
                     nn.init.normal_(m.weight, mean=0.0, std=1.0)
+                    print('Initialization method is normal.')
                 else:
                     nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                    print('Initialization method is kaiming_normal.')
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
